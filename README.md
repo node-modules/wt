@@ -8,7 +8,7 @@ wt
 
 ![logo](https://raw.github.com/node-modules/wt/master/logo.png)
 
-wt: Simple dir watcher, support events:
+wt: Simple dir watcher, support events and multi dirs:
 
 * `all`: every change event
 * `file`: file change event, not include file remove
@@ -25,7 +25,7 @@ $ npm install wt
 ```js
 var wt = require('wt');
 
-var watcher = wt.watch(__dirname);
+var watcher = wt.watch(['/home/foouser/data1', '/home/foouser/data2']);
 watcher.on('all', function (info) {
 
 }).on('file', function (info) {

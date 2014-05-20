@@ -14,6 +14,7 @@
  * Module dependencies.
  */
 
+var debug = require('debug')('wt');
 var path = require('path');
 var fs = require('fs');
 var EventEmitter = require('events').EventEmitter;
@@ -24,14 +25,14 @@ module.exports = Watcher;
 /**
  * Watcher
  *
- * @param {String} dir
+ * @param {String|Array} dir, dir fullpath, maybe dir list.
  * @param {Object} [options]
  *  - {Boolean} persistent, indicates whether the process should continue to
  *    run as long as files are being watched, default is `true`
  *  - {Boolean} recursive indicates whether all subdirectories should be watched,
  *    or only the current directory, default is `true`
  */
-function Watcher(dir, options) {
+function Watcher(dirs, options) {
   options = options || {};
   if (options.persistent === undefined) {
     options.persistent = true;
@@ -40,12 +41,18 @@ function Watcher(dir, options) {
     options.recursive = true;
   }
 
-  this._root = dir;
-  this._watcher = fs.watch(dir, options, this._handle.bind(this));
+  if (typeof dirs === 'string') {
+    dirs = [dirs];
+  }
+
+  var that = this;
+  this._watchers = dirs.map(function (dir) {
+    return fs.watch(dir, options, that._handle.bind(that, dir));
+  });
 }
 
-Watcher.watch = function (dir, options) {
-  return new Watcher(dir, options);
+Watcher.watch = function (dirs, options) {
+  return new Watcher(dirs, options);
 };
 
 util.inherits(Watcher, EventEmitter);
@@ -54,13 +61,22 @@ var proto = Watcher.prototype;
 
 proto.close = function () {
   this.removeAllListeners();
-  this._watcher.close();
-  this._watcher = null;
+  this._watchers.forEach(function (watcher) {
+    watcher.close();
+  });
+  this._watchers = null;
 };
 
-proto._handle = function (event, name) {
+proto._handle = function (root, event, name) {
   var that = this;
-  var fullpath = path.join(this._root, name);
+  // if (name[0] === '/') {
+  //   // this shuld be fs.watch bug
+  //   debug('[warnning] %s %s: filename should not start with /, root: %s', event, name, root);
+  //   return;
+  // }
+
+  var fullpath = path.join(root, name);
+  debug('%s %s on %s', event, name, root);
   fs.stat(fullpath, function (err, stat) {
     var info = {
       event: event,
@@ -75,12 +91,22 @@ proto._handle = function (event, name) {
         info.remove = true;
       }
     }
+
+    if (event === 'change' && info.remove) {
+      // this should be a fs.watch bug
+      debug('[warnning] %s %s on %s, but file not exists, ignore this', event, name, root);
+      return;
+    }
+
     that.emit('all', info);
     if (info.remove) {
+      debug('remove %s', fullpath);
       that.emit('remove', info);
     } else if (info.isFile) {
+      debug('file %s', fullpath);
       that.emit('file', info);
     } else if (info.isDirectory) {
+      debug('dir %s', fullpath);
       that.emit('dir', info);
     }
   });

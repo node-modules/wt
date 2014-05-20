@@ -85,7 +85,7 @@ describe('index.test.js', function () {
     });
   });
 
-  it('should watch dir create', function (done) {
+  it('should watch dir remove', function (done) {
     done = pedding(3, done);
     var filepath = path.join(fixtures, 'subdir', 'subsubdir', 'subsubdeldir');
     !fs.existsSync(filepath) && fs.mkdirSync(filepath);
@@ -105,7 +105,7 @@ describe('index.test.js', function () {
     });
   });
 
-  it('should watch dir remove', function (done) {
+  it('should watch dir create', function (done) {
     done = pedding(3, done);
     var filepath = path.join(fixtures, 'subdir', 'subsubdir', 'subsubdeldir');
     fs.existsSync(filepath) && fs.rmdirSync(filepath);

@@ -1,7 +1,7 @@
 {
   "name": "wt",
   "version": "0.0.1",
-  "description": "wt: Simple dir watcher",
+  "description": "wt: Simple dir watcher, support multi dirs",
   "main": "index.js",
   "scripts": {
     "test": "make test-all"
@@ -12,7 +12,7 @@
     }
   },
   "dependencies": {
-
+    "debug": "~0.8.1"
   },
   "devDependencies": {
     "autod": "*",
@@ -34,7 +34,7 @@
     "email": "fengmk2@gmail.com"
   },
   "keywords": [
-    "watch", "watcher", "wt", "fs", "dir"
+    "watch", "watcher", "wt", "fs", "dir", "multi-watch"
   ],
   "engines": {
     "node": ">= 0.10.0"
