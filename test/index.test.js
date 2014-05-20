@@ -74,24 +74,18 @@ describe('index.test.js', function () {
 
     fs.unlink(filepath, done);
 
-    var lastpath = null;
-    var allpath = null;
     this.watcher.on('remove', function (info) {
-      if (lastpath === info.path) {
-        // watch will repeat
+      if (filepath !== info.path) {
         return;
       }
-      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
       done();
     }).on('all', function (info) {
-      if (allpath === info.path) {
-        // watch will repeat
+      if (filepath !== info.path) {
         return;
       }
-      allpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
