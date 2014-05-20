@@ -8,7 +8,7 @@ wt
 
 ![logo](https://raw.github.com/node-modules/wt/master/logo.png)
 
-wt: Simple dir watcher, support events and multi dirs:
+wt: Simple dir watcher, including all subdirectories, support events and multi dirs:
 
 * `all`: every change event
 * `file`: file change event, not include file remove
