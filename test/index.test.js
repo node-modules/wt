@@ -74,10 +74,17 @@ describe('index.test.js', function () {
 
     fs.unlink(filepath, done);
 
+    var lastpath = null;
+    var allpath = null;
     this.watcher.on('remove', function (info) {
       if (filepath !== info.path) {
         return;
       }
+      if (lastpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -86,6 +93,11 @@ describe('index.test.js', function () {
       if (filepath !== info.path) {
         return;
       }
+      if (allpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      allpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -100,10 +112,18 @@ describe('index.test.js', function () {
 
     fs.rmdir(filepath, done);
 
+    var lastpath = null;
+    var allpath = null;
     this.watcher.on('remove', function (info) {
       if (info.path !== filepath) {
         return;
       }
+
+      if (lastpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -113,6 +133,12 @@ describe('index.test.js', function () {
         // watch will repeat and cause other change on linux
         return;
       }
+
+      if (allpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      allpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -125,10 +151,17 @@ describe('index.test.js', function () {
     var filepath = path.join(fixtures, 'subdir', 'subsubdir', 'subsubdeldir');
     fs.existsSync(filepath) && fs.rmdirSync(filepath);
     fs.mkdir(filepath, done);
+
+    var lastpath = null;
     this.watcher.on('dir', function (info) {
       if (filepath !== info.path) {
         return;
       }
+
+      if (lastpath === info.path) {
+        return;
+      }
+      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.isDirectory.should.equal(true);
