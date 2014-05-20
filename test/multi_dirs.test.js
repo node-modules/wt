@@ -47,16 +47,12 @@ describe('multi_dirs.test.js', function () {
     var filepath1 = path.join(fixtures, 'subdir', 'subfoo.txt');
     var filepath2 = path.join(fixtures, 'otherdir', 'otherfoo.txt');
     var changefiles = [];
-    var changealls = [];
 
-    var done = pedding(6, function (err) {
+    var done = pedding(4, function (err) {
       should.not.exist(err);
       changefiles.should.length(2);
-      changealls.should.length(2);
       should.ok(changefiles.indexOf(filepath1) >= 0);
       should.ok(changefiles.indexOf(filepath2) >= 0);
-      should.ok(changealls.indexOf(filepath1) >= 0);
-      should.ok(changealls.indexOf(filepath2) >= 0);
       _done();
     });
 
@@ -64,11 +60,10 @@ describe('multi_dirs.test.js', function () {
     fs.writeFile(filepath2, 'bar', done);
 
     this.watcher.on('file', function (info) {
+      if (changefiles.indexOf(info.path) >= 0) {
+        return;
+      }
       changefiles.push(info.path);
-      info.isFile.should.equal(true);
-      done();
-    }).on('all', function (info) {
-      changealls.push(info.path);
       info.isFile.should.equal(true);
       done();
     });
@@ -96,10 +91,16 @@ describe('multi_dirs.test.js', function () {
     fs.writeFile(filepath2, 'subbar', done);
 
     this.watcher.on('file', function (info) {
+      if (changefiles.indexOf(info.path) >= 0) {
+        return;
+      }
       changefiles.push(info.path);
       info.isFile.should.equal(true);
       done();
     }).on('all', function (info) {
+      if (changealls.indexOf(info.path) >= 0) {
+        return;
+      }
       changealls.push(info.path);
       info.isFile.should.equal(true);
       done();
@@ -128,21 +129,16 @@ describe('multi_dirs.test.js', function () {
     fs.unlink(filepath1, done);
     fs.unlink(filepath2, done);
 
-
-    var lastallpath = null;
-    var lastfilepath = null;
     this.watcher.on('remove', function (info) {
       if (info.path.indexOf('/sub/ubdel.txt') > 0) {
         // this a bug on node@0.11.x fs.watch
         return;
       }
-      if (lastfilepath === info.path) {
+      if (removefiles.indexOf(info.path) >= 0) {
         // repeat emit
         return;
       }
-      lastfilepath = info.path;
       removefiles.push(info.path);
-
       info.event.should.equal('rename');
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -152,11 +148,10 @@ describe('multi_dirs.test.js', function () {
         // this a bug on node@0.11.x fs.watch
         return;
       }
-      if (lastallpath === info.path) {
+      if (allfiles.indexOf(info.path) >= 0) {
         // repeat emit
         return;
       }
-      lastallpath = info.path;
       allfiles.push(info.path);
       info.event.should.equal('rename');
       info.isFile.should.equal(false);
@@ -199,7 +194,12 @@ describe('multi_dirs.test.js', function () {
           // this a bug on node@0.11.x fs.watch
           return;
         }
-
+        if (!info.isDirectory) {
+          return;
+        }
+        if (removedirs.indexOf(info.path) >= 0) {
+          return;
+        }
         removedirs.push(info.path);
         info.remove.should.equal(true);
         info.isDirectory.should.equal(true);
@@ -209,7 +209,12 @@ describe('multi_dirs.test.js', function () {
           // this a bug on node@0.11.x fs.watch
           return;
         }
-
+        if (!info.isDirectory) {
+          return;
+        }
+        if (alldirs.indexOf(info.path) >= 0) {
+          return;
+        }
         alldirs.push(info.path);
         info.remove.should.equal(true);
         info.isDirectory.should.equal(true);
@@ -257,7 +262,9 @@ describe('multi_dirs.test.js', function () {
         // this a bug on node@0.11.x fs.watch
         return;
       }
-
+      if (changedirs.indexOf(info.path) >= 0) {
+        return;
+      }
       changedirs.push(info.path);
       info.isFile.should.equal(false);
       info.isDirectory.should.equal(true);
@@ -268,7 +275,9 @@ describe('multi_dirs.test.js', function () {
         // this a bug on node@0.11.x fs.watch
         return;
       }
-
+      if (alldirs.indexOf(info.path) >= 0) {
+        return;
+      }
       alldirs.push(info.path);
       info.isFile.should.equal(false);
       info.isDirectory.should.equal(true);

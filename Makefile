@@ -1,6 +1,6 @@
 TESTS = test/*.test.js
 REPORTER = spec
-TIMEOUT = 5000
+TIMEOUT = 2000
 MOCHA_OPTS =
 
 install:

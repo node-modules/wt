@@ -32,16 +32,17 @@ describe('index.test.js', function () {
   });
 
   it('should watch file change', function (done) {
-    done = pedding(3, done);
+    done = pedding(2, done);
     var filepath = path.join(fixtures, 'foo.txt');
-
     fs.writeFile(filepath, 'bar', done);
 
+    var lastpath = null;
     this.watcher.on('file', function (info) {
-      info.path.should.equal(filepath);
-      info.isFile.should.equal(true);
-      done();
-    }).on('all', function (info) {
+      if (lastpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(true);
       done();
@@ -49,16 +50,17 @@ describe('index.test.js', function () {
   });
 
   it('should watch subdir file change', function (done) {
-    done = pedding(3, done);
+    done = pedding(2, done);
     var filepath = path.join(fixtures, 'subdir', 'subfoo.txt');
-
     fs.writeFile(filepath, 'subbar', done);
 
+    var lastpath = null;
     this.watcher.on('file', function (info) {
-      info.path.should.equal(filepath);
-      info.isFile.should.equal(true);
-      done();
-    }).on('all', function (info) {
+      if (lastpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(true);
       done();
@@ -72,12 +74,24 @@ describe('index.test.js', function () {
 
     fs.unlink(filepath, done);
 
+    var lastpath = null;
+    var allpath = null;
     this.watcher.on('remove', function (info) {
+      if (lastpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
       done();
     }).on('all', function (info) {
+      if (allpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      allpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -92,12 +106,24 @@ describe('index.test.js', function () {
 
     fs.rmdir(filepath, done);
 
+    var lastpath = null;
+    var allpath = null;
     this.watcher.on('remove', function (info) {
+      if (lastpath) {
+        // watch will repeat
+        return;
+      }
+      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
       done();
     }).on('all', function (info) {
+      if (allpath) {
+        // watch will repeat
+        return;
+      }
+      allpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -106,19 +132,20 @@ describe('index.test.js', function () {
   });
 
   it('should watch dir create', function (done) {
-    done = pedding(3, done);
+    done = pedding(2, done);
     var filepath = path.join(fixtures, 'subdir', 'subsubdir', 'subsubdeldir');
     fs.existsSync(filepath) && fs.rmdirSync(filepath);
 
     fs.mkdir(filepath, done);
 
+    var lastpath = null;
     this.watcher.on('dir', function (info) {
-      info.path.should.equal(filepath);
-      info.isFile.should.equal(false);
-      info.isDirectory.should.equal(true);
-      info.remove.should.equal(false);
-      done();
-    }).on('all', function (info) {
+      if (lastpath === info.path) {
+        // watch will repeat
+        return;
+      }
+      lastpath = info.path;
+
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.isDirectory.should.equal(true);
