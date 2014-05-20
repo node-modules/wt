@@ -12,7 +12,8 @@
     }
   },
   "dependencies": {
-    "debug": "~0.8.1"
+    "debug": "~0.8.1",
+    "ndir": "~0.1.5"
   },
   "devDependencies": {
     "autod": "*",

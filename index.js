@@ -19,6 +19,7 @@ var path = require('path');
 var fs = require('fs');
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
+var ndir = require('ndir');
 
 module.exports = Watcher;
 
@@ -26,28 +27,34 @@ module.exports = Watcher;
  * Watcher
  *
  * @param {String|Array} dir, dir fullpath, maybe dir list.
- * @param {Object} [options]
- *  - {Boolean} persistent, indicates whether the process should continue to
- *    run as long as files are being watched, default is `true`
- *  - {Boolean} recursive indicates whether all subdirectories should be watched,
- *    or only the current directory, default is `true`
  */
-function Watcher(dirs, options) {
-  options = options || {};
-  if (options.persistent === undefined) {
-    options.persistent = true;
-  }
-  if (options.recursive === undefined) {
-    options.recursive = true;
-  }
+function Watcher(dirs, done) {
+  // http://nodejs.org/dist/v0.11.12/docs/api/fs.html#fs_caveats
+  // The recursive option is currently supported on OS X.
+  // Only FSEvents supports this type of file watching
+  // so it is unlikely any additional platforms will be added soon.
+
+  this.options = {
+    persistent: true,
+    recursive: false, // so we dont use this features
+  };
 
   if (typeof dirs === 'string') {
     dirs = [dirs];
   }
 
+  this._watchers = {};
+  dirs.forEach(this.watch.bind(this));
+
+  var index = 0;
   var that = this;
-  this._watchers = dirs.map(function (dir) {
-    return fs.watch(dir, options, that._handle.bind(that, dir));
+  dirs.forEach(function (dir) {
+    that.once('watch-' + dir, function () {
+      if (++index === dirs.length) {
+        debug('watch %j ready', dirs);
+        done && done();
+      }
+    });
   });
 }
 
@@ -59,12 +66,46 @@ util.inherits(Watcher, EventEmitter);
 
 var proto = Watcher.prototype;
 
+proto.watch = function (dir) {
+  var watchers = this._watchers;
+  var that = this;
+  debug('walking %s...', dir);
+  ndir.walk(dir).on('dir', function (dirpath) {
+    if (watchers[dirpath]) {
+      debug('fs.watch %s exists', dirpath);
+      return;
+    }
+    debug('fs.watch %s start...', dirpath);
+    var watcher;
+    try {
+      watcher = fs.watch(dirpath, that.options, that._handle.bind(that, dirpath));
+    } catch (err) {
+      debug('[error] fs.watch error: %s', err.message);
+      return;
+    }
+    watchers[dirpath] = watcher;
+    watcher.once('error', that._onWatcherError.bind(that, dirpath));
+  }).on('error', function (err) {
+    that.emit('watch-error-' + dir);
+  }).on('end', function () {
+    debug('watch %s done', dir);
+    that.emit('watch-' + dir);
+  });
+};
+
 proto.close = function () {
   this.removeAllListeners();
-  this._watchers.forEach(function (watcher) {
-    watcher.close();
-  });
-  this._watchers = null;
+  for (var k in this._watchers) {
+    this._watchers[k].close();
+  }
+  this._watchers = {};
+};
+
+proto._onWatcherError = function (dirpath, err) {
+  var watcher = this._watchers[dirpath];
+  debug('[error] watcher error: %s', err.message);
+  watcher.close();
+  delete this._watchers[dirpath];
 };
 
 proto._handle = function (root, event, name) {
@@ -96,6 +137,22 @@ proto._handle = function (root, event, name) {
       // this should be a fs.watch bug
       debug('[warnning] %s %s on %s, but file not exists, ignore this', event, name, root);
       return;
+    }
+
+    if (info.remove) {
+      var watcher = that._watchers[info.path];
+      if (watcher) {
+        // close the exists watcher
+        info.isDirectory = true;
+        watcher.close();
+        delete that._watchers[info.path];
+      }
+    } else if (info.isDirectory) {
+      var watcher = that._watchers[info.path];
+      if (!watcher) {
+        // add new watcher
+        that.watch(info.path);
+      }
     }
 
     that.emit('all', info);

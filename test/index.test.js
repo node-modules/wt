@@ -23,8 +23,8 @@ var wt = require('../');
 describe('index.test.js', function () {
   var fixtures = path.join(__dirname, 'fixtures');
 
-  beforeEach(function () {
-    this.watcher = wt.watch(fixtures);
+  beforeEach(function (done) {
+    this.watcher = wt.watch(fixtures, done);
   });
 
   afterEach(function () {
