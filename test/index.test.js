@@ -68,14 +68,13 @@ describe('index.test.js', function () {
   });
 
   it('should watch file remove', function (done) {
-    done = pedding(3, done);
+    done = pedding(2, done);
     var filepath = path.join(fixtures, 'subdir', 'subsubdir', 'subsubdel.txt');
     fs.writeFileSync(filepath, 'need to be delete');
 
     fs.unlink(filepath, done);
 
     var lastpath = null;
-    var allpath = null;
     this.watcher.on('remove', function (info) {
       if (filepath !== info.path) {
         return;
@@ -85,19 +84,6 @@ describe('index.test.js', function () {
         return;
       }
       lastpath = info.path;
-      info.path.should.equal(filepath);
-      info.isFile.should.equal(false);
-      info.remove.should.equal(true);
-      done();
-    }).on('all', function (info) {
-      if (filepath !== info.path) {
-        return;
-      }
-      if (allpath === info.path) {
-        // watch will repeat
-        return;
-      }
-      allpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
