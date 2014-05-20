@@ -1,4 +1,14 @@
 
+0.1.0 / 2014-05-20
+==================
+
+ * only test remove on remove file
+ * filter repeat event
+ * rm file will cause other change on linux
+ * rm dir will cause other change on linux
+ * fix repeat event on linux
+ * support recursive on linux platform
+
 0.0.2 / 2014-05-20
 ==================
 
