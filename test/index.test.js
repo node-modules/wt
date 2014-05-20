@@ -106,24 +106,19 @@ describe('index.test.js', function () {
 
     fs.rmdir(filepath, done);
 
-    var lastpath = null;
-    var allpath = null;
     this.watcher.on('remove', function (info) {
-      if (lastpath) {
-        // watch will repeat
+      if (info.path !== filepath) {
         return;
       }
-      lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
       done();
     }).on('all', function (info) {
-      if (allpath) {
-        // watch will repeat
+      if (info.path !== filepath) {
+        // watch will repeat and cause other change on linux
         return;
       }
-      allpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.remove.should.equal(true);
@@ -135,17 +130,11 @@ describe('index.test.js', function () {
     done = pedding(2, done);
     var filepath = path.join(fixtures, 'subdir', 'subsubdir', 'subsubdeldir');
     fs.existsSync(filepath) && fs.rmdirSync(filepath);
-
     fs.mkdir(filepath, done);
-
-    var lastpath = null;
     this.watcher.on('dir', function (info) {
-      if (lastpath === info.path) {
-        // watch will repeat
+      if (filepath !== info.path) {
         return;
       }
-      lastpath = info.path;
-
       info.path.should.equal(filepath);
       info.isFile.should.equal(false);
       info.isDirectory.should.equal(true);
