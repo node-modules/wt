@@ -28,6 +28,9 @@ describe('index.test.js', function () {
   });
 
   afterEach(function () {
+    try {
+      fs.rmdirSync(path.join(fixtures, '.createdir'));
+    } catch (err) {}
     this.watcher.close();
   });
 
@@ -37,16 +40,36 @@ describe('index.test.js', function () {
     fs.writeFile(filepath, 'bar', done);
 
     var lastpath = null;
-    this.watcher.on('file', function (info) {
-      if (lastpath === info.path) {
-        // watch will repeat
-        return;
-      }
+    this.watcher.once('file', function (info) {
       lastpath = info.path;
       info.path.should.equal(filepath);
       info.isFile.should.equal(true);
       done();
     });
+  });
+
+  it('should ignore hidden file change', function (done) {
+    done = pedding(2, done);
+    var filepath = path.join(fixtures, '.file.txt.swp');
+    fs.writeFile(filepath, 'vim tmp file\n', done);
+
+    var lastpath = null;
+    this.watcher.on('file', function (info) {
+      throw new Error('should not run this');
+    });
+    setTimeout(done, 200);
+  });
+
+  it('should ignore hidden dir change', function (done) {
+    done = pedding(2, done);
+    var dirpath = path.join(fixtures, '.createdir');
+    fs.mkdir(dirpath, done);
+
+    var lastpath = null;
+    this.watcher.on('dir', function (info) {
+      throw new Error('should not run this');
+    });
+    setTimeout(done, 200);
   });
 
   it('should watch subdir file change', function (done) {

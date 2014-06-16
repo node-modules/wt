@@ -27,14 +27,29 @@ module.exports = Watcher;
  * Watcher
  *
  * @param {String|Array} dir, dir fullpath, maybe dir list.
+ * @param {Object} options
+ *  - {Boolean} [ignoreHidden] ignore hidden file or not, default is `true`
+ * @param {Function} [done], watch all dirs done callback.
  */
-function Watcher(dirs, done) {
+function Watcher(dirs, options, done) {
   // http://nodejs.org/dist/v0.11.12/docs/api/fs.html#fs_caveats
   // The recursive option is currently supported on OS X.
   // Only FSEvents supports this type of file watching
   // so it is unlikely any additional platforms will be added soon.
 
-  this.options = {
+  if (typeof options === 'function') {
+    // Watcher(dirs, done);
+    done = options;
+    options = null;
+  }
+
+  options = options || {};
+  if (options.ignoreHidden === undefined || options.ignoreHidden === null) {
+    options.ignoreHidden = true;
+  }
+  this._ignoreHidden = !!options.ignoreHidden;
+
+  this.watchOptions = {
     persistent: true,
     recursive: false, // so we dont use this features
   };
@@ -71,6 +86,10 @@ proto.watch = function (dir) {
   var that = this;
   debug('walking %s...', dir);
   ndir.walk(dir).on('dir', function (dirpath) {
+    if (path.basename(dirpath)[0] === '.' && that._ignoreHidden) {
+      debug('fs.watch ignore hidden dir: %s', dirpath);
+      return;
+    }
     if (watchers[dirpath]) {
       debug('fs.watch %s exists', dirpath);
       return;
@@ -78,7 +97,7 @@ proto.watch = function (dir) {
     debug('fs.watch %s start...', dirpath);
     var watcher;
     try {
-      watcher = fs.watch(dirpath, that.options, that._handle.bind(that, dirpath));
+      watcher = fs.watch(dirpath, that.watchOptions, that._handle.bind(that, dirpath));
     } catch (err) {
       debug('[error] fs.watch error: %s', err.message);
       return;
@@ -110,11 +129,10 @@ proto._onWatcherError = function (dirpath, err) {
 
 proto._handle = function (root, event, name) {
   var that = this;
-  // if (name[0] === '/') {
-  //   // this shuld be fs.watch bug
-  //   debug('[warnning] %s %s: filename should not start with /, root: %s', event, name, root);
-  //   return;
-  // }
+  if (name[0] === '.' && this._ignoreHidden) {
+    debug('ignore %s on %s/%s', event, root, name);
+    return;
+  }
 
   var fullpath = path.join(root, name);
   debug('%s %s on %s', event, name, root);
