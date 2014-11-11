@@ -73,8 +73,8 @@ function Watcher(dirs, options, done) {
   });
 }
 
-Watcher.watch = function (dirs, done) {
-  return new Watcher(dirs, done);
+Watcher.watch = function (dirs, options, done) {
+  return new Watcher(dirs, options, done);
 };
 
 util.inherits(Watcher, EventEmitter);
