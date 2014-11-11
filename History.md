@@ -1,4 +1,9 @@
 
+0.2.1 / 2014-11-11
+==================
+
+ * add missing argument for factory function (@luckydrq)
+
 0.2.0 / 2014-06-16
 ==================
 

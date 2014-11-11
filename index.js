@@ -105,7 +105,7 @@ proto.watch = function (dir) {
     watchers[dirpath] = watcher;
     watcher.once('error', that._onWatcherError.bind(that, dirpath));
   }).on('error', function (err) {
-    that.emit('watch-error-' + dir);
+    that.emit('watch-error-' + dir, err);
   }).on('end', function () {
     debug('watch %s done', dir);
     that.emit('watch-' + dir);
