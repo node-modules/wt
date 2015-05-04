@@ -20,6 +20,7 @@ var fs = require('fs');
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 var ndir = require('ndir');
+var pedding = require('pedding');
 
 module.exports = Watcher;
 
@@ -31,17 +32,11 @@ module.exports = Watcher;
  *  - {Boolean} [ignoreHidden] ignore hidden file or not, default is `true`
  * @param {Function} [done], watch all dirs done callback.
  */
-function Watcher(dirs, options, done) {
+function Watcher(options) {
   // http://nodejs.org/dist/v0.11.12/docs/api/fs.html#fs_caveats
   // The recursive option is currently supported on OS X.
   // Only FSEvents supports this type of file watching
   // so it is unlikely any additional platforms will be added soon.
-
-  if (typeof options === 'function') {
-    // Watcher(dirs, done);
-    done = options;
-    options = null;
-  }
 
   options = options || {};
   if (options.ignoreHidden === undefined || options.ignoreHidden === null) {
@@ -54,27 +49,26 @@ function Watcher(dirs, options, done) {
     recursive: false, // so we dont use this features
   };
 
-  if (typeof dirs === 'string') {
-    dirs = [dirs];
-  }
-
   this._watchers = {};
-  dirs.forEach(this.watch.bind(this));
-
-  var index = 0;
-  var that = this;
-  dirs.forEach(function (dir) {
-    that.once('watch-' + dir, function () {
-      if (++index === dirs.length) {
-        debug('watch %j ready', dirs);
-        done && done();
-      }
-    });
-  });
 }
 
 Watcher.watch = function (dirs, options, done) {
-  return new Watcher(dirs, options, done);
+  // watch(dirs, done);
+  if (typeof options === 'function') {
+    done = options;
+    options = null;
+  }
+
+  // watch(dirs);
+  if (!done) {
+    done = function() {};
+  }
+
+  var len = Array.isArray(dirs) ? dirs.length : 1;
+  return new Watcher(options)
+    .watch(dirs)
+    .once('error', done)
+    .on('watch', pedding(len, done).bind(null, null));
 };
 
 util.inherits(Watcher, EventEmitter);
@@ -82,6 +76,11 @@ util.inherits(Watcher, EventEmitter);
 var proto = Watcher.prototype;
 
 proto.watch = function (dir) {
+  if (Array.isArray(dir)) {
+    dir.forEach(this.watch.bind(this));
+    return this;
+  }
+
   var watchers = this._watchers;
   var that = this;
   debug('walking %s...', dir);
@@ -105,11 +104,14 @@ proto.watch = function (dir) {
     watchers[dirpath] = watcher;
     watcher.once('error', that._onWatcherError.bind(that, dirpath));
   }).on('error', function (err) {
-    that.emit('watch-error-' + dir, err);
+    err.dir = dir;
+    that.emit('watch-error', err);
   }).on('end', function () {
     debug('watch %s done', dir);
-    that.emit('watch-' + dir);
+    debug('now watching %s', Object.keys(that._watchers));
+    that.emit('watch', dir);
   });
+  return this;
 };
 
 proto.close = function () {
@@ -172,7 +174,6 @@ proto._handle = function (root, event, name) {
         that.watch(info.path);
       }
     }
-
     that.emit('all', info);
     if (info.remove) {
       debug('remove %s', fullpath);

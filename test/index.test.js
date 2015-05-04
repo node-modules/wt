@@ -52,8 +52,7 @@ describe('index.test.js', function () {
     var filepath = path.join(fixtures, '.file.txt.swp');
     fs.writeFile(filepath, 'vim tmp file\n', done);
 
-    var lastpath = null;
-    this.watcher.on('file', function (info) {
+    this.watcher.on('file', function () {
       throw new Error('should not run this');
     });
     setTimeout(done, 200);
@@ -64,8 +63,7 @@ describe('index.test.js', function () {
     var dirpath = path.join(fixtures, '.createdir');
     fs.mkdir(dirpath, done);
 
-    var lastpath = null;
-    this.watcher.on('dir', function (info) {
+    this.watcher.on('dir', function () {
       throw new Error('should not run this');
     });
     setTimeout(done, 200);

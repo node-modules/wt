@@ -19,7 +19,6 @@
   "devDependencies": {
     "autod": "*",
     "contributors": "*",
-    "cov": "*",
     "istanbul": "*",
     "jshint": "*",
     "mocha": "*",
