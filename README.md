@@ -24,8 +24,6 @@ wt
 [download-image]: https://img.shields.io/npm/dm/wt.svg?style=flat-square
 [download-url]: https://npmjs.org/package/wt
 
-![logo](https://raw.github.com/node-modules/wt/master/logo.png)
-
 wt: Simple dir watcher, including all subdirectories, support events and multi dirs:
 
 * `all`: every change event

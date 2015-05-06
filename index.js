@@ -1,11 +1,11 @@
 /**!
  * wt - index.js
  *
- * Copyright(c) fengmk2 and other contributors.
+ * Copyright(c) node-modules and other contributors.
  * MIT Licensed
  *
  * Authors:
- *   fengmk2 <fengmk2@gmail.com> (http://fengmk2.github.com)
+ *   fengmk2 <fengmk2@gmail.com> (http://fengmk2.com)
  */
 
 'use strict';
@@ -20,7 +20,6 @@ var fs = require('fs');
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 var ndir = require('ndir');
-var pedding = require('pedding');
 
 module.exports = Watcher;
 
@@ -64,11 +63,16 @@ Watcher.watch = function (dirs, options, done) {
     done = function() {};
   }
 
-  var len = Array.isArray(dirs) ? dirs.length : 1;
+  var count = Array.isArray(dirs) ? dirs.length : 1;
   return new Watcher(options)
     .watch(dirs)
     .once('error', done)
-    .on('watch', pedding(len, done).bind(null, null));
+    .on('watch', function () {
+      count--;
+      if (count === 0) {
+        done();
+      }
+    });
 };
 
 util.inherits(Watcher, EventEmitter);

@@ -26,11 +26,12 @@ describe('index.test.js', function () {
     this.watcher = wt.watch(fixtures, done);
   });
 
-  afterEach(function () {
+  afterEach(function (done) {
     try {
       fs.rmdirSync(path.join(fixtures, '.createdir'));
     } catch (err) {}
     this.watcher.close();
+    setTimeout(done, 100);
   });
 
   it('should watch file change', function (done) {
@@ -67,6 +68,20 @@ describe('index.test.js', function () {
       throw new Error('should not run this');
     });
     setTimeout(done, 200);
+  });
+
+  it('should not ignore hidden dir change with ignoreHidden option', function (done) {
+    done = pedding(2, done);
+
+    this.watcher.close();
+    this.watcher = wt.watch(fixtures, {ignoreHidden: false}, function() {
+      var dirpath = path.join(fixtures, '.createdir');
+      fs.mkdir(dirpath, done);
+
+      this.watcher.on('dir', function () {
+        done();
+      });
+    }.bind(this));
   });
 
   it('should watch subdir file change', function (done) {
@@ -172,6 +187,27 @@ describe('index.test.js', function () {
       info.isFile.should.equal(false);
       info.isDirectory.should.equal(true);
       info.remove.should.equal(false);
+      done();
+    });
+  });
+
+  it('should emit watch event twice', function(done) {
+    done = pedding(2, done);
+
+    this.watcher.close();
+    this.watcher = wt.watch([
+      path.join(fixtures, 'subdir'),
+      path.join(fixtures, 'subdir2')
+    ]).on('watch', done.bind(null, null));
+  });
+
+  it('should emit watch-error event', function(done) {
+    var filepath = path.join(fixtures, 'not-exist');
+
+    this.watcher.close();
+    this.watcher = wt.watch(filepath)
+    .on('watch-error', function(err) {
+      err.dir.should.eql(filepath);
       done();
     });
   });
