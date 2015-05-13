@@ -13,7 +13,7 @@
     "contributors": "contributors -f plain -o AUTHORS"
   },
   "dependencies": {
-    "debug": "~2.1.0",
+    "debug": "~2.2.0",
     "ndir": "~0.1.5",
     "sdk-base": "~1.0.1"
   },
@@ -24,8 +24,8 @@
     "jshint": "*",
     "mocha": "*",
     "pedding": "~1.0.0",
-    "rmdir-recursive": "0.0.1",
-    "should": "~4.3.0"
+    "rmdir-recursive": "~0.0.1",
+    "should": "~6.0.1"
   },
   "homepage": "https://github.com/node-modules/wt",
   "repository": {
