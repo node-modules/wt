@@ -17,21 +17,24 @@
 var debug = require('debug')('wt');
 var path = require('path');
 var fs = require('fs');
-var EventEmitter = require('events').EventEmitter;
+var Base = require('sdk-base');
 var util = require('util');
 var ndir = require('ndir');
 
 module.exports = Watcher;
+module.exports.Watcher = Watcher;
 
 /**
  * Watcher
  *
- * @param {String|Array} dir, dir fullpath, maybe dir list.
  * @param {Object} options
  *  - {Boolean} [ignoreHidden] ignore hidden file or not, default is `true`
+ *  - {Number} [rewatchInterval] auto rewatch root dir interval,
+ *  	default is `0`, don't rewatch.
  * @param {Function} [done], watch all dirs done callback.
  */
 function Watcher(options) {
+  Base.call(this);
   // http://nodejs.org/dist/v0.11.12/docs/api/fs.html#fs_caveats
   // The recursive option is currently supported on OS X.
   // Only FSEvents supports this type of file watching
@@ -42,6 +45,7 @@ function Watcher(options) {
     options.ignoreHidden = true;
   }
   this._ignoreHidden = !!options.ignoreHidden;
+  this._rewatchInterval = options.rewatchInterval;
 
   this.watchOptions = {
     persistent: true,
@@ -49,6 +53,12 @@ function Watcher(options) {
   };
 
   this._watchers = {};
+  this._rootDirs = [];
+  this._rewatchTimer = null;
+  if (this._rewatchInterval && typeof this._rewatchInterval === 'number') {
+    this._rewatchTimer = setInterval(this._rewatchRootDirs.bind(this), this._rewatchInterval);
+    debug('start rewatch timer every %dms', this._rewatchInterval);
+  }
 }
 
 Watcher.watch = function (dirs, options, done) {
@@ -58,33 +68,114 @@ Watcher.watch = function (dirs, options, done) {
     options = null;
   }
 
-  // watch(dirs);
-  if (!done) {
-    done = function() {};
-  }
-
-  var count = Array.isArray(dirs) ? dirs.length : 1;
-  return new Watcher(options)
-    .watch(dirs)
-    .once('error', done)
-    .on('watch', function () {
+  var watcher = new Watcher(options).watch(dirs);
+  if (typeof done === 'function') {
+    var count = Array.isArray(dirs) ? dirs.length : 1;
+    watcher.on('watch', function () {
       count--;
       if (count === 0) {
         done();
       }
     });
+  }
+  return watcher;
 };
 
-util.inherits(Watcher, EventEmitter);
+util.inherits(Watcher, Base);
 
 var proto = Watcher.prototype;
 
-proto.watch = function (dir) {
-  if (Array.isArray(dir)) {
-    dir.forEach(this.watch.bind(this));
-    return this;
+proto.isWatching = function (dir) {
+  return !!this._watchers[dir];
+};
+
+/**
+ * Start watch dir(s)
+ *
+ * @param  {Array|String} dirs: dir path or path list
+ * @return {this}
+ */
+proto.watch = function (dirs) {
+  if (!Array.isArray(dirs)) {
+    dirs = [dirs];
   }
 
+  for (var i = 0; i < dirs.length; i++) {
+    var dir = dirs[i];
+    this._watchDir(dir);
+    if (this._rootDirs.indexOf(dir) === -1) {
+      this._rootDirs.push(dir);
+    }
+  }
+  return this;
+};
+
+proto.unwatch = function (dirs) {
+  if (!Array.isArray(dirs)) {
+    dirs = [dirs];
+  }
+
+  for (var i = 0; i < dirs.length; i++) {
+    var dir = dirs[i];
+    this._unwatchDir(dir);
+    if (this._rootDirs.indexOf(dir) === -1) {
+      // remove from root dirs
+      this._rootDirs.splice(this._rootDirs.indexOf(dir), 1);
+    }
+  }
+  return this;
+};
+
+proto.close = function () {
+  for (var k in this._watchers) {
+    this._watchers[k].close();
+    this._watchers[k].removeAllListeners();
+    this._watchers[k] = null;
+  }
+  this._watchers = {};
+
+  // 等待一个事件循环后再移除所有时间，确保 watcher 的 error 事件还能被捕获
+  setImmediate(function () {
+    this.removeAllListeners();
+  }.bind(this));
+  if (this._rewatchTimer) {
+    clearInterval(this._rewatchTimer);
+    this._rewatchTimer = null;
+  }
+};
+
+proto._rewatchRootDirs = function () {
+  // _rootDirs will change on unwatch() api
+  var dirs = JSON.parse(JSON.stringify(this._rootDirs));
+  for (var i = 0; i < dirs.length; i++) {
+    var dir = dirs[i];
+    if (this._rootDirs.indexOf(dir) === -1) {
+      // had been unwatched
+      continue;
+    }
+    // watcher missing, meaning dir was deleted
+    // try to rewatch again
+    this._watchDirIfExists(dir);
+  }
+};
+
+proto._watchDirIfExists = function (dir) {
+  var that = this;
+  fs.stat(dir, function (err, stat) {
+    debug('[watchDirIfExists] %s, error: %s, exists: %s', dir, err, !!stat);
+    if (stat && stat.isDirectory()) {
+      if (!that._watchers[dir]) {
+        // watch again!
+        that._watchDir(dir);
+      }
+    } else if (!stat) {
+      // not exists, close watcher
+      that._unwatchDir(dir);
+    }
+  });
+};
+
+proto._watchDir = function (dir) {
   var watchers = this._watchers;
   var that = this;
   debug('walking %s...', dir);
@@ -102,35 +193,51 @@ proto.watch = function (dir) {
     try {
       watcher = fs.watch(dirpath, that.watchOptions, that._handle.bind(that, dirpath));
     } catch (err) {
-      debug('[error] fs.watch error: %s', err.message);
+      err.dir = dirpath;
+      that.emit('error', err);
       return;
     }
     watchers[dirpath] = watcher;
     watcher.once('error', that._onWatcherError.bind(that, dirpath));
   }).on('error', function (err) {
     err.dir = dir;
-    that.emit('watch-error', err);
+    that.emit('error', err);
   }).on('end', function () {
     debug('watch %s done', dir);
-    debug('now watching %s', Object.keys(that._watchers));
+    // debug('now watching %s', Object.keys(that._watchers));
     that.emit('watch', dir);
   });
   return this;
 };
 
-proto.close = function () {
-  this.removeAllListeners();
-  for (var k in this._watchers) {
-    this._watchers[k].close();
+proto._unwatchDir = function (dir) {
+  var watcher = this._watchers[dir];
+  debug('unwatch %s, watcher exists: %s', dir, !!watcher);
+  if (watcher) {
+    watcher.close();
+    watcher.removeAllListeners();
+    delete this._watchers[dir];
+    this.emit('unwatch', dir);
   }
-  this._watchers = {};
+  // should close all subdir watchers too
+  var subdirs = Object.keys(this._watchers);
+  for (var i = 0; i < subdirs.length; i++) {
+    var subdir = subdirs[i];
+    if (subdir.indexOf(dir + '/') === 0) {
+      // close subdir watcher
+      watcher = this._watchers[subdir];
+      watcher.close();
+      watcher.removeAllListeners();
+      delete this._watchers[subdir];
+      debug('close subdir %s watcher by %s', subdir, dir);
+    }
+  }
 };
 
-proto._onWatcherError = function (dirpath, err) {
-  var watcher = this._watchers[dirpath];
-  debug('[error] watcher error: %s', err.message);
-  watcher.close();
-  delete this._watchers[dirpath];
+proto._onWatcherError = function (dir, err) {
+  this._unwatchDir(dir);
+  err.dir = dir;
+  this.emit('error', err);
 };
 
 proto._handle = function (root, event, name) {
@@ -139,55 +246,87 @@ proto._handle = function (root, event, name) {
     debug('ignore %s on %s/%s', event, root, name);
     return;
   }
+  // check root stat
+  fs.exists(root, function (exists) {
+    if (!exists) {
+      debug('[handle] %s %s on %s, root not exists', event, name, root);
+      that._handleChange({
+        event: event,
+        path: path.join(root, name),
+        stat: null,
+        remove: true,
+        isDirectory: false,
+        isFile: false,
+      });
 
-  var fullpath = path.join(root, name);
-  debug('%s %s on %s', event, name, root);
-  fs.stat(fullpath, function (err, stat) {
-    var info = {
-      event: event,
-      path: fullpath,
-      stat: stat,
-      remove: false,
-      isDirectory: stat && stat.isDirectory() || false,
-      isFile: stat && stat.isFile() || false,
-    };
-    if (err) {
-      if (err.code === 'ENOENT') {
-        info.remove = true;
+      // linux event, dir self remove, will fire `rename with dir name itself`
+      if (that._watchers[root]) {
+        debug('[handle] fire root:%s %s by %s', root, event, name);
+        that._handleChange({
+          event: event,
+          path: root,
+          stat: null,
+          remove: true,
+          isDirectory: true,
+          isFile: false,
+        });
       }
-    }
-
-    if (event === 'change' && info.remove) {
-      // this should be a fs.watch bug
-      debug('[warnning] %s %s on %s, but file not exists, ignore this', event, name, root);
       return;
     }
 
-    if (info.remove) {
-      var watcher = that._watchers[info.path];
-      if (watcher) {
-        // close the exists watcher
-        info.isDirectory = true;
-        watcher.close();
-        delete that._watchers[info.path];
+    // children change
+    debug('[handle] %s %s on %s, root exists', event, name, root);
+    var fullpath = path.join(root, name);
+    fs.stat(fullpath, function (err, stat) {
+      var info = {
+        event: event,
+        path: fullpath,
+        stat: stat,
+        remove: false,
+        isDirectory: stat && stat.isDirectory() || false,
+        isFile: stat && stat.isFile() || false,
+      };
+      if (err) {
+        if (err.code === 'ENOENT') {
+          info.remove = true;
+        }
       }
-    } else if (info.isDirectory) {
-      var watcher = that._watchers[info.path];
-      if (!watcher) {
-        // add new watcher
-        that.watch(info.path);
+
+      if (event === 'change' && info.remove) {
+        // this should be a fs.watch bug
+        debug('[warnning] %s on %s, but file not exists, ignore this', event, fullpath);
+        return;
       }
-    }
-    that.emit('all', info);
-    if (info.remove) {
-      debug('remove %s', fullpath);
-      that.emit('remove', info);
-    } else if (info.isFile) {
-      debug('file %s', fullpath);
-      that.emit('file', info);
-    } else if (info.isDirectory) {
-      debug('dir %s', fullpath);
-      that.emit('dir', info);
-    }
+      that._handleChange(info);
+    });
   });
+};
+
+proto._handleChange = function (info) {
+  var that = this;
+  if (info.remove) {
+    var watcher = that._watchers[info.path];
+    if (watcher) {
+      // close the exists watcher
+      info.isDirectory = true;
+      that._unwatchDir(info.path);
+    }
+  } else if (info.isDirectory) {
+    var watcher = that._watchers[info.path];
+    if (!watcher) {
+      // add new watcher
+      that._watchDir(info.path);
+    }
+  }
+  that.emit('all', info);
+  if (info.remove) {
+    debug('[remove] %s, isDirectory: %s', info.path, info.isDirectory);
+    that.emit('remove', info);
+  } else if (info.isFile) {
+    debug('[file] %s', info.path);
+    that.emit('file', info);
+  } else if (info.isDirectory) {
+    debug('[dir] %s', info.path);
+    that.emit('dir', info);
+  }
 };

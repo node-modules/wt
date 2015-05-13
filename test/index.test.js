@@ -17,20 +17,25 @@
 var path = require('path');
 var fs = require('fs');
 var pedding = require('pedding');
+var rmdirRecursive = require('rmdir-recursive');
 var wt = require('../');
 
 describe('index.test.js', function () {
   var fixtures = path.join(__dirname, 'fixtures');
 
   beforeEach(function (done) {
-    this.watcher = wt.watch(fixtures, done);
+    var watcher = wt.watch(fixtures, function () {
+      watcher.isWatching(fixtures).should.equal(true);
+      watcher.isWatching(path.join(fixtures, 'subdir', 'subsubdir')).should.equal(true);
+      done();
+    });
+    this.watcher = watcher;
   });
 
   afterEach(function (done) {
-    try {
-      fs.rmdirSync(path.join(fixtures, '.createdir'));
-    } catch (err) {}
     this.watcher.close();
+    rmdirRecursive.sync(path.join(fixtures, '.createdir'));
+    rmdirRecursive.sync(path.join(fixtures, 'unwatch-test-dir'));
     setTimeout(done, 100);
   });
 
@@ -201,14 +206,74 @@ describe('index.test.js', function () {
     ]).on('watch', done.bind(null, null));
   });
 
-  it('should emit watch-error event', function(done) {
+  it('should emit error event', function(done) {
     var filepath = path.join(fixtures, 'not-exist');
-
-    this.watcher.close();
-    this.watcher = wt.watch(filepath)
-    .on('watch-error', function(err) {
+    var watcher = wt.watch(filepath);
+    watcher.on('error', function(err) {
+      err.message.should.containEql('ENOENT');
       err.dir.should.eql(filepath);
+      watcher.close();
       done();
+    });
+  });
+
+  it('should emit unwatch event when root dir remove', function (done) {
+    var dirpath = path.join(fixtures, 'unwatch-test-dir');
+    this.watcher.once('dir', function (info) {
+      info.path.should.equal(dirpath);
+      info.event.should.equal('rename');
+      info.isDirectory.should.equal(true);
+      setTimeout(function () {
+        rmdirRecursive.sync(dirpath);
+      }, 100);
+    });
+    this.watcher.once('unwatch', function (dir) {
+      dir.should.equal(path.join(dirpath, 'subdir1'));
+      setTimeout(done, 100);
+    });
+    fs.mkdirSync(dirpath);
+    fs.mkdirSync(path.join(dirpath, 'subdir1'));
+    fs.mkdirSync(path.join(dirpath, 'subdir2'));
+    fs.mkdirSync(path.join(dirpath, 'subdir3'));
+    setTimeout(function () {
+      fs.writeFileSync(path.join(dirpath, 'subdir3', 'f3.txt'), 'f3');
+    }, 50);
+  });
+
+  describe('options.rewatchInterval = 1000', function () {
+    var watcher;
+    var rootDir = path.join(__dirname, 'rewatchInterval_tmp');
+    fs.mkdirSync(rootDir);
+    beforeEach(function (done) {
+      watcher = new wt.Watcher({
+        rewatchInterval: 500
+      });
+      watcher.once('watch', function (dir) {
+        dir.should.equal(rootDir);
+        done();
+      });
+      watcher.watch(rootDir);
+    });
+
+    afterEach(function (done) {
+      watcher.close();
+      rmdirRecursive.sync(rootDir);
+      setTimeout(done, 500);
+    });
+
+    it('should auto rewatch root dir', function (done) {
+      watcher.once('unwatch', function (dir) {
+        dir.should.equal(rootDir);
+        // receate dir again
+        watcher.once('watch', function (dir) {
+          dir.should.equal(rootDir);
+          done();
+        });
+        setTimeout(function () {
+          fs.mkdirSync(rootDir);
+        }, 1100);
+      });
+      rmdirRecursive.sync(rootDir);
     });
   });
 });
