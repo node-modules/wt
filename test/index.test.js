@@ -240,9 +240,19 @@ describe('index.test.js', function () {
     }, 50);
   });
 
-  describe('options.rewatchInterval = 1000', function () {
+  it('should mock watcher error event emit', function (done) {
+    this.watcher.once('error', function (err) {
+      err.message.should.equal('mock error');
+      err.dir.should.equal(fixtures);
+      done();
+    });
+    this.watcher._watchers[fixtures].emit('error', new Error('mock error'));
+  });
+
+  describe('options.rewatchInterval = 500', function () {
     var watcher;
     var rootDir = path.join(__dirname, 'rewatchInterval_tmp');
+    rmdirRecursive.sync(rootDir);
     fs.mkdirSync(rootDir);
     beforeEach(function (done) {
       watcher = new wt.Watcher({
@@ -264,7 +274,7 @@ describe('index.test.js', function () {
     it('should auto rewatch root dir', function (done) {
       watcher.once('unwatch', function (dir) {
         dir.should.equal(rootDir);
-        // receate dir again
+        // create dir again
         watcher.once('watch', function (dir) {
           dir.should.equal(rootDir);
           done();
@@ -272,6 +282,59 @@ describe('index.test.js', function () {
         setTimeout(function () {
           fs.mkdirSync(rootDir);
         }, 1100);
+      });
+      rmdirRecursive.sync(rootDir);
+    });
+
+    it('should rewatch check pass', function (done) {
+      watcher.watch(fixtures);
+      watcher.watch(fixtures + 'not-exists');
+      // mock watch file
+      fs.writeFileSync(fixtures + 'not-exists');
+      setTimeout(function () {
+        fs.unlink(fixtures + 'not-exists', done);
+      }, 1000);
+    });
+  });
+
+  describe('unwatch()', function () {
+    var watcher;
+    var rootDir = path.join(__dirname, 'unwatch_tmp');
+    rmdirRecursive.sync(rootDir);
+    fs.mkdirSync(rootDir);
+    beforeEach(function (done) {
+      watcher = new wt.Watcher({
+        rewatchInterval: 500
+      });
+      watcher.once('watch', function (dir) {
+        dir.should.equal(rootDir);
+        done();
+      });
+      watcher.watch(rootDir);
+      // watch exists root dir
+      watcher.watch([rootDir]);
+    });
+
+    afterEach(function (done) {
+      watcher.close();
+      rmdirRecursive.sync(rootDir);
+      setTimeout(done, 500);
+    });
+
+    it('should unwatch rootdir', function (done) {
+      watcher.once('unwatch', function (dir) {
+        dir.should.equal(rootDir);
+        // wont rewatch after dir is unwatch
+        watcher.once('watch', function () {
+          throw new Error('should not run this');
+        });
+        setTimeout(function () {
+          watcher.unwatch(rootDir);
+          // again should work
+          watcher.unwatch([rootDir]);
+          fs.mkdirSync(rootDir);
+          setTimeout(done, 500);
+        }, 500);
       });
       rmdirRecursive.sync(rootDir);
     });

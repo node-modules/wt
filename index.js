@@ -118,7 +118,7 @@ proto.unwatch = function (dirs) {
   for (var i = 0; i < dirs.length; i++) {
     var dir = dirs[i];
     this._unwatchDir(dir);
-    if (this._rootDirs.indexOf(dir) === -1) {
+    if (this._rootDirs.indexOf(dir) !== -1) {
       // remove from root dirs
       this._rootDirs.splice(this._rootDirs.indexOf(dir), 1);
     }
@@ -145,14 +145,8 @@ proto.close = function () {
 };
 
 proto._rewatchRootDirs = function () {
-  // _rootDirs will change on unwatch() api
-  var dirs = JSON.parse(JSON.stringify(this._rootDirs));
-  for (var i = 0; i < dirs.length; i++) {
-    var dir = dirs[i];
-    if (this._rootDirs.indexOf(dir) === -1) {
-      // had been unwatched
-      continue;
-    }
+  for (var i = 0; i < this._rootDirs.length; i++) {
+    var dir = this._rootDirs[i];
     // watcher missing, meaning dir was deleted
     // try to rewatch again
     this._watchDirIfExists(dir);

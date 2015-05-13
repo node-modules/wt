@@ -4,5 +4,5 @@ node_js:
   - 'iojs-1'
   - '0.12'
   - '0.11'
-script: "npm run test-travis"
+script: "DEBUG=wt npm run test-travis"
 after_script: "npm install coveralls@2 && cat ./coverage/lcov.info | coveralls"
