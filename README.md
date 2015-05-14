@@ -29,6 +29,7 @@ wt: Simple dir watcher, including all subdirectories, support events and multi d
 * `all`: every change event
 * `file`: file change event, not include file remove
 * `dir`: dir change event, not include dir remove
+* `remove`: file or dir remove event
 
 ## Install
 
@@ -54,6 +55,17 @@ setTimeout(function () {
   watcher.close();
 }, 10000);
 ```
+
+## Other Events
+
+- `on('error', function (err) {})`: watcher error event, e.g.: watching not exists dir
+- `on('watch', function (dir) {})`: a new dir watcher start
+- `on('unwatch', function (dir) {})`: watching dir removed, will emit this event
+
+## Known issues
+
+- Remove a sub dir, all files in the remove dir won't fire `remove` event.
+Only fire `remove` event on the sub dir once.
 
 ## License
 

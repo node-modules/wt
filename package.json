@@ -13,8 +13,9 @@
     "contributors": "contributors -f plain -o AUTHORS"
   },
   "dependencies": {
-    "debug": "~2.1.0",
-    "ndir": "~0.1.5"
+    "debug": "~2.2.0",
+    "ndir": "~0.1.5",
+    "sdk-base": "~1.0.1"
   },
   "devDependencies": {
     "autod": "*",
@@ -23,7 +24,8 @@
     "jshint": "*",
     "mocha": "*",
     "pedding": "~1.0.0",
-    "should": "~4.3.0"
+    "rmdir-recursive": "~0.0.1",
+    "should": "~6.0.1"
   },
   "homepage": "https://github.com/node-modules/wt",
   "repository": {
@@ -35,11 +37,17 @@
     "email": "fengmk2@gmail.com"
   },
   "keywords": [
-    "watch", "watcher", "wt", "fs", "dir",
-    "multi-watch", "subdir", "subdirectories"
+    "watch",
+    "watcher",
+    "wt",
+    "fs",
+    "dir",
+    "multi-watch",
+    "subdir",
+    "subdirectories"
   ],
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">= 0.11.12"
   },
   "author": "fengmk2 <fengmk2@gmail.com> (http://fengmk2.github.com)",
   "license": "MIT"
