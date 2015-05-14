@@ -1,4 +1,11 @@
 
+1.1.0 / 2015-05-14
+==================
+
+ * deps: debug@2.2.0
+ * test: improve test coverage
+ * feat: support auto rewatch root dir
+
 1.0.0 / 2015-05-07
 ==================
 
