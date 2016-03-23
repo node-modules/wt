@@ -17,7 +17,7 @@
 var path = require('path');
 var fs = require('fs');
 var pedding = require('pedding');
-var rmdirRecursive = require('rmdir-recursive');
+var rimraf = require('rimraf');
 var wt = require('../');
 
 describe('index.test.js', function () {
@@ -34,8 +34,8 @@ describe('index.test.js', function () {
 
   afterEach(function (done) {
     this.watcher.close();
-    rmdirRecursive.sync(path.join(fixtures, '.createdir'));
-    rmdirRecursive.sync(path.join(fixtures, 'unwatch-test-dir'));
+    rimraf.sync(path.join(fixtures, '.createdir'));
+    rimraf.sync(path.join(fixtures, 'unwatch-test-dir'));
     setTimeout(done, 100);
   });
 
@@ -224,11 +224,12 @@ describe('index.test.js', function () {
       info.event.should.equal('rename');
       info.isDirectory.should.equal(true);
       setTimeout(function () {
-        rmdirRecursive.sync(dirpath);
+        rimraf.sync(dirpath);
       }, 100);
     });
+
     this.watcher.once('unwatch', function (dir) {
-      dir.should.equal(path.join(dirpath, 'subdir1'));
+      dir.should.containEql(dirpath);
       setTimeout(done, 100);
     });
     fs.mkdirSync(dirpath);
@@ -252,7 +253,7 @@ describe('index.test.js', function () {
   describe('options.rewatchInterval = 500', function () {
     var watcher;
     var rootDir = path.join(__dirname, 'rewatchInterval_tmp');
-    rmdirRecursive.sync(rootDir);
+    rimraf.sync(rootDir);
     fs.mkdirSync(rootDir);
     beforeEach(function (done) {
       watcher = new wt.Watcher({
@@ -267,7 +268,7 @@ describe('index.test.js', function () {
 
     afterEach(function (done) {
       watcher.close();
-      rmdirRecursive.sync(rootDir);
+      rimraf.sync(rootDir);
       setTimeout(done, 500);
     });
 
@@ -283,7 +284,7 @@ describe('index.test.js', function () {
           fs.mkdirSync(rootDir);
         }, 1100);
       });
-      rmdirRecursive.sync(rootDir);
+      rimraf.sync(rootDir);
     });
 
     it('should rewatch check pass', function (done) {
@@ -300,7 +301,7 @@ describe('index.test.js', function () {
   describe('unwatch()', function () {
     var watcher;
     var rootDir = path.join(__dirname, 'unwatch_tmp');
-    rmdirRecursive.sync(rootDir);
+    rimraf.sync(rootDir);
     fs.mkdirSync(rootDir);
     beforeEach(function (done) {
       watcher = new wt.Watcher({
@@ -317,7 +318,7 @@ describe('index.test.js', function () {
 
     afterEach(function (done) {
       watcher.close();
-      rmdirRecursive.sync(rootDir);
+      rimraf.sync(rootDir);
       setTimeout(done, 500);
     });
 
@@ -336,7 +337,7 @@ describe('index.test.js', function () {
           setTimeout(done, 500);
         }, 500);
       });
-      rmdirRecursive.sync(rootDir);
+      rimraf.sync(rootDir);
     });
   });
 });
