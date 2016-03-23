@@ -24,6 +24,7 @@
     "mocha": "*",
     "pedding": "1",
     "rmdir-recursive": "~0.0.1",
+    "rimraf": "^2.5.2",
     "should": "6"
   },
   "homepage": "https://github.com/node-modules/wt",
