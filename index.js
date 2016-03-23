@@ -1,6 +1,4 @@
-/**!
- * wt - index.js
- *
+/**
  * Copyright(c) node-modules and other contributors.
  * MIT Licensed
  *
@@ -99,7 +97,7 @@ proto.watch = function (dirs) {
   if (!Array.isArray(dirs)) {
     dirs = [dirs];
   }
-
+  debug('watch(%j)', dirs);
   for (var i = 0; i < dirs.length; i++) {
     var dir = dirs[i];
     this._watchDir(dir);
@@ -175,14 +173,14 @@ proto._watchDir = function (dir) {
   debug('walking %s...', dir);
   ndir.walk(dir).on('dir', function (dirpath) {
     if (path.basename(dirpath)[0] === '.' && that._ignoreHidden) {
-      debug('fs.watch ignore hidden dir: %s', dirpath);
+      debug('ignore hidden dir: %s', dirpath);
       return;
     }
     if (watchers[dirpath]) {
-      debug('fs.watch %s exists', dirpath);
+      debug('%s exists', dirpath);
       return;
     }
-    debug('fs.watch %s start...', dirpath);
+    debug('fs.watch(%s) start...', dirpath);
     var watcher;
     try {
       watcher = fs.watch(dirpath, that.watchOptions, that._handle.bind(that, dirpath));
@@ -197,7 +195,7 @@ proto._watchDir = function (dir) {
     err.dir = dir;
     that.emit('error', err);
   }).on('end', function () {
-    debug('watch %s done', dir);
+    debug('_watchDir(%s) done', dir);
     // debug('now watching %s', Object.keys(that._watchers));
     that.emit('watch', dir);
   });
@@ -236,6 +234,10 @@ proto._onWatcherError = function (dir, err) {
 
 proto._handle = function (root, event, name) {
   var that = this;
+  if (!name) {
+    debug('[WARNING] event:%j, name:%j not exists on %s', root);
+    return;
+  }
   if (name[0] === '.' && this._ignoreHidden) {
     debug('ignore %s on %s/%s', event, root, name);
     return;
@@ -288,7 +290,7 @@ proto._handle = function (root, event, name) {
 
       if (event === 'change' && info.remove) {
         // this should be a fs.watch bug
-        debug('[warnning] %s on %s, but file not exists, ignore this', event, fullpath);
+        debug('[WARNING] %s on %s, but file not exists, ignore this', event, fullpath);
         return;
       }
       that._handleChange(info);
@@ -297,6 +299,7 @@ proto._handle = function (root, event, name) {
 };
 
 proto._handleChange = function (info) {
+  debug('_handleChange(%j)', info);
   var that = this;
   if (info.remove) {
     var watcher = that._watchers[info.path];
@@ -314,13 +317,13 @@ proto._handleChange = function (info) {
   }
   that.emit('all', info);
   if (info.remove) {
-    debug('[remove] %s, isDirectory: %s', info.path, info.isDirectory);
+    debug('[remove event] %s, isDirectory: %s', info.path, info.isDirectory);
     that.emit('remove', info);
   } else if (info.isFile) {
-    debug('[file] %s', info.path);
+    debug('[file change event] %s', info.path);
     that.emit('file', info);
   } else if (info.isDirectory) {
-    debug('[dir] %s', info.path);
+    debug('[dir change envet] %s', info.path);
     that.emit('dir', info);
   }
 };

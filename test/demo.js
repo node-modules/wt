@@ -1,6 +1,4 @@
-/**!
- * wt - test/demo.js
- *
+/**
  * Copyright(c) fengmk2 and other contributors.
  * MIT Licensed
  *
@@ -15,7 +13,7 @@
  */
 
 var path = require('path');
-var fs = require('fs');
+// var fs = require('fs');
 var wt = require('../');
 
 var fixtures = path.join(__dirname, 'fixtures');

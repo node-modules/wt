@@ -227,8 +227,9 @@ describe('index.test.js', function () {
         rmdirRecursive.sync(dirpath);
       }, 100);
     });
+
     this.watcher.once('unwatch', function (dir) {
-      dir.should.equal(path.join(dirpath, 'subdir1'));
+      dir.should.containEql(dirpath);
       setTimeout(done, 100);
     });
     fs.mkdirSync(dirpath);

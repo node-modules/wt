@@ -4,18 +4,17 @@
   "description": "wt: Simple dir watcher, including all subdirectories, support multi dirs",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --check-leaks -R spec -t 5000 -r should test/*.test.js",
-    "test-cov": "node node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- --check-leaks -t 5000 -r should test/*.test.js",
-    "test-travis": "node node_modules/.bin/istanbul cover node_modules/.bin/_mocha --report lcovonly -- --check-leaks -t 5000 -r should test/*.test.js",
-    "jshint": "jshint .",
+    "test": "mocha -R spec -t 5000 -r should test/*.test.js",
+    "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- -t 5000 -r should test/*.test.js",
+    "ci": "npm run lint && npm run test-cov",
+    "lint": "jshint .",
     "autod": "autod -w --prefix '~'",
-    "cnpm": "npm install --registry=https://registry.npm.taobao.org",
     "contributors": "contributors -f plain -o AUTHORS"
   },
   "dependencies": {
-    "debug": "~2.2.0",
-    "ndir": "~0.1.5",
-    "sdk-base": "~1.0.1"
+    "debug": "^2.2.0",
+    "ndir": "^0.1.5",
+    "sdk-base": "^2.0.1"
   },
   "devDependencies": {
     "autod": "*",
@@ -23,9 +22,9 @@
     "istanbul": "*",
     "jshint": "*",
     "mocha": "*",
-    "pedding": "~1.0.0",
+    "pedding": "1",
     "rmdir-recursive": "~0.0.1",
-    "should": "~6.0.1"
+    "should": "6"
   },
   "homepage": "https://github.com/node-modules/wt",
   "repository": {
@@ -47,8 +46,8 @@
     "subdirectories"
   ],
   "engines": {
-    "node": ">= 0.11.12"
+    "node": ">= 0.12.9"
   },
-  "author": "fengmk2 <fengmk2@gmail.com> (http://fengmk2.github.com)",
+  "author": "fengmk2 <fengmk2@gmail.com> (http://fengmk2.com)",
   "license": "MIT"
 }
