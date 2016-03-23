@@ -1,6 +1,6 @@
 {
   "name": "wt",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "wt: Simple dir watcher, including all subdirectories, support multi dirs",
   "main": "index.js",
   "scripts": {

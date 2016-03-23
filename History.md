@@ -1,4 +1,10 @@
 
+1.1.1 / 2016-03-23
+==================
+
+  * deps: use rimraf
+  * fix: watch event name will be undefined
+
 1.1.0 / 2015-05-14
 ==================
 
