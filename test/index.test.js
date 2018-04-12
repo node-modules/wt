@@ -92,7 +92,7 @@ describe('index.test.js', function () {
   it('should ignore node_modules dir change', function (done) {
     done = pedding(2, done);
     var dirpath = path.join(fixtures, 'node_modules');
-    fs.mkdir(dirpath, ()=>{
+    fs.mkdir(dirpath, function () {
       fs.rmdir(dirpath, done);
     });
     
