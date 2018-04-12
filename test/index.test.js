@@ -93,7 +93,7 @@ describe('index.test.js', function () {
     done = pedding(2, done);
     var dirpath = path.join(fixtures, 'node_modules');
     fs.mkdir(dirpath, ()=>{
-      fs.rmdir(dirpath, done)
+      fs.rmdir(dirpath, done);
     });
     
     this.watcher.on('dir', function () {

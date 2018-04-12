@@ -44,7 +44,7 @@ function Watcher(options) {
     options.ignoreHidden = true;
   }
   if(options.ignoreNodeModules === void 666 || options.ignoreNodeModules === null){
-    options.ignoreNodeModules = true
+    options.ignoreNodeModules = true;
   }
   this._ignoreHidden = !!options.ignoreHidden;
   this._ignoreNodeModules = options.ignoreNodeModules;
