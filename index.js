@@ -26,6 +26,7 @@ module.exports.Watcher = Watcher;
  * Watcher
  *
  * @param {Object} options
+ *  - {Boolean} [ignoreNodeModules] ignore node_modules or not, default is `true`
  *  - {Boolean} [ignoreHidden] ignore hidden file or not, default is `true`
  *  - {Number} [rewatchInterval] auto rewatch root dir interval,
  *  	default is `0`, don't rewatch.
@@ -42,7 +43,11 @@ function Watcher(options) {
   if (options.ignoreHidden === undefined || options.ignoreHidden === null) {
     options.ignoreHidden = true;
   }
+  if(options.ignoreNodeModules === void 666 || options.ignoreNodeModules === null){
+    options.ignoreNodeModules = true
+  }
   this._ignoreHidden = !!options.ignoreHidden;
+  this._ignoreNodeModules = options.ignoreNodeModules;
   this._rewatchInterval = options.rewatchInterval;
 
   this.watchOptions = {
@@ -176,6 +181,10 @@ proto._watchDir = function (dir) {
       debug('ignore hidden dir: %s', dirpath);
       return;
     }
+    if(path.basename(dirpath) === 'node_modules' && that._ignoreNodeModules){
+      debug('ignore node_modules dir: %s', dirpath);
+      return;
+    }
     if (watchers[dirpath]) {
       debug('%s exists', dirpath);
       return;
@@ -239,6 +248,10 @@ proto._handle = function (root, event, name) {
     return;
   }
   if (name[0] === '.' && this._ignoreHidden) {
+    debug('ignore %s on %s/%s', event, root, name);
+    return;
+  }
+  if (name === 'node_modules' && this._ignoreNodeModules) {
     debug('ignore %s on %s/%s', event, root, name);
     return;
   }
