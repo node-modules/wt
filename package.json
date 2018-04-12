@@ -21,10 +21,10 @@
     "contributors": "*",
     "istanbul": "*",
     "jshint": "*",
-    "mocha": "*",
+    "mocha": "^5.0.5",
     "pedding": "1",
-    "rmdir-recursive": "~0.0.1",
     "rimraf": "^2.5.2",
+    "rmdir-recursive": "~0.0.1",
     "should": "6"
   },
   "homepage": "https://github.com/node-modules/wt",

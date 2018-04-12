@@ -92,9 +92,8 @@ describe('index.test.js', function () {
   it('should ignore node_modules dir change', function (done) {
     done = pedding(2, done);
     var dirpath = path.join(fixtures, 'node_modules');
-    fs.mkdir(dirpath, function () {
-      fs.rmdir(dirpath, done);
-    });
+    fs.existsSync(dirpath) && fs.rmdirSync(dirpath);
+    fs.mkdir(dirpath, done);
     
     this.watcher.on('dir', function () {
       throw new Error('should not run this');
@@ -108,6 +107,7 @@ describe('index.test.js', function () {
     this.watcher.close();
     this.watcher = wt.watch(fixtures, {ignoreNodeModules: false}, function() {
       var dirpath = path.join(fixtures, 'node_modules');
+      fs.existsSync(dirpath) && fs.rmdirSync(dirpath);
       fs.mkdir(dirpath, done);
 
       this.watcher.on('dir', function () {
