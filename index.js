@@ -43,7 +43,7 @@ function Watcher(options) {
   if (options.ignoreHidden === undefined || options.ignoreHidden === null) {
     options.ignoreHidden = true;
   }
-  if(options.ignoreNodeModules === undefined || options.ignoreNodeModules === null){
+  if (options.ignoreNodeModules === undefined || options.ignoreNodeModules === null){
     options.ignoreNodeModules = true;
   }
   this._ignoreHidden = !!options.ignoreHidden;
@@ -181,7 +181,7 @@ proto._watchDir = function (dir) {
       debug('ignore hidden dir: %s', dirpath);
       return;
     }
-    if(path.basename(dirpath) === 'node_modules' && that._ignoreNodeModules){
+    if (path.basename(dirpath) === 'node_modules' && that._ignoreNodeModules){
       debug('ignore node_modules dir: %s', dirpath);
       return;
     }
