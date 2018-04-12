@@ -47,7 +47,7 @@ function Watcher(options) {
     options.ignoreNodeModules = true;
   }
   this._ignoreHidden = !!options.ignoreHidden;
-  this._ignoreNodeModules = options.ignoreNodeModules;
+  this._ignoreNodeModules = !!options.ignoreNodeModules;
   this._rewatchInterval = options.rewatchInterval;
 
   this.watchOptions = {
