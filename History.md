@@ -1,4 +1,13 @@
 
+1.2.0 / 2018-04-19
+==================
+
+**features**
+  * [[`0bdc868`](http://github.com/node-modules/wt/commit/0bdc868fa8ecc73e595369ad72f1e4b98ec1c258)] - feat: add `ignoreNodeModules` options for ignoring node_modules directory (#9) (ZhengFang <<215566435@qq.com>>)
+
+**others**
+  * [[`26e8766`](http://github.com/node-modules/wt/commit/26e8766cea17acae41923a72f1371039a31c328d)] - test: use mocha@3 to support node 0.12 (#10) (fengmk2 <<fengmk2@gmail.com>>)
+
 1.1.1 / 2016-03-23
 ==================
 
