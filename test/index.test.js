@@ -36,6 +36,7 @@ describe('index.test.js', function () {
     this.watcher.close();
     rimraf.sync(path.join(fixtures, '.createdir'));
     rimraf.sync(path.join(fixtures, 'unwatch-test-dir'));
+    rimraf.sync(path.join(fixtures, 'node_modules'));
     setTimeout(done, 100);
   });
 

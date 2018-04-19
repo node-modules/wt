@@ -281,7 +281,7 @@ describe('multi_dirs.test.js', function () {
         info.remove.should.equal(false);
         done();
       });
-      setTimeout(done, 500);
+      setTimeout(done, 5000);
     });
   });
 });
