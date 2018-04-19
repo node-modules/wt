@@ -69,7 +69,7 @@ Only fire `remove` event on the sub dir once.
 (The MIT License)
 
 Copyright (c) 2014 fengmk2 <fengmk2@gmail.com> and other contributors
-Copyright (c) 2015 - 2016 node-modules and other contributors
+Copyright (c) 2015 - present node-modules and other contributors
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

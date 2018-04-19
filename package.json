@@ -21,7 +21,7 @@
     "contributors": "*",
     "istanbul": "*",
     "jshint": "*",
-    "mocha": "*",
+    "mocha": "3",
     "pedding": "1",
     "rimraf": "^2.5.2",
     "rmdir-recursive": "~0.0.1",

@@ -1,18 +1,4 @@
-/**!
- * wt - test/multi_dirs.test.js
- *
- * Copyright(c) fengmk2 and other contributors.
- * MIT Licensed
- *
- * Authors:
- *   fengmk2 <fengmk2@gmail.com> (http://fengmk2.github.com)
- */
-
 'use strict';
-
-/**
- * Module dependencies.
- */
 
 var should = require('should');
 var path = require('path');
@@ -281,7 +267,6 @@ describe('multi_dirs.test.js', function () {
         info.remove.should.equal(false);
         done();
       });
-      setTimeout(done, 5000);
     });
   });
 });
