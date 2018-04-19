@@ -36,6 +36,7 @@ describe('index.test.js', function () {
     this.watcher.close();
     rimraf.sync(path.join(fixtures, '.createdir'));
     rimraf.sync(path.join(fixtures, 'unwatch-test-dir'));
+    rimraf.sync(path.join(fixtures, 'node_modules'));
     setTimeout(done, 100);
   });
 
@@ -81,6 +82,33 @@ describe('index.test.js', function () {
     this.watcher.close();
     this.watcher = wt.watch(fixtures, {ignoreHidden: false}, function() {
       var dirpath = path.join(fixtures, '.createdir');
+      fs.mkdir(dirpath, done);
+
+      this.watcher.on('dir', function () {
+        done();
+      });
+    }.bind(this));
+  });
+
+  it('should ignore node_modules dir change', function (done) {
+    done = pedding(2, done);
+    var dirpath = path.join(fixtures, 'node_modules');
+    fs.existsSync(dirpath) && fs.rmdirSync(dirpath);
+    fs.mkdir(dirpath, done);
+    
+    this.watcher.on('dir', function () {
+      throw new Error('should not run this');
+    });
+    setTimeout(done, 200);
+  });
+
+  it('should not ignore node_modules dir change with ignoreNodeModules option', function (done) {
+    done = pedding(2, done);
+
+    this.watcher.close();
+    this.watcher = wt.watch(fixtures, {ignoreNodeModules: false}, function() {
+      var dirpath = path.join(fixtures, 'node_modules');
+      fs.existsSync(dirpath) && fs.rmdirSync(dirpath);
       fs.mkdir(dirpath, done);
 
       this.watcher.on('dir', function () {
