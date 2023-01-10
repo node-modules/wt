@@ -12,7 +12,7 @@
     "contributors": "contributors -f plain -o AUTHORS"
   },
   "dependencies": {
-    "debug": "^2.2.0",
+    "debug": "^3.1.0",
     "ndir": "^0.1.5",
     "sdk-base": "^2.0.1"
   },
